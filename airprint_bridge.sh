@@ -178,7 +178,8 @@ browse_printers() {
 
     shared_printers=()
     while IFS= read -r printer; do
-        if lpoptions -p "$printer" | grep -q 'printer-is-shared=true'; then
+        if lpoptions -p "$printer" | grep -q 'printer-is-shared=true' || \
+           grep -A1 "<.*Printer $printer>" /etc/cups/printers.conf 2>/dev/null | grep -q 'Shared Yes'; then
             shared_printers+=("$printer")
         fi
     done <<< "$all_printers"
