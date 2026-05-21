@@ -240,14 +240,14 @@ generate_urf() {
     while IFS= read -r line; do
         case "$line" in
             # Color Mode Options
-            *"ColorModel"*)
+            *"ColorModel"*|*"BRMonoColor"*)
                 IFS=' ' read -r -a color_modes <<< "$(echo "$line" | awk -F':' '{print $2}' | sed 's/^ *//')"
                 for color_mode in "${color_modes[@]}"; do
                     case "$color_mode" in
-                        *Gray*|*Black*)
+                        *Gray*|*Black*|*Mono*)
                             add_urf_code "W8"
                             ;;
-                        *RGB*|*Color*)
+                        *RGB*|*Color*|*FullColor*|*Auto*)
                             add_urf_code "SRGB24"
                             HAS_COLOR=1
                             ;;
