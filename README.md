@@ -178,12 +178,55 @@ Your system will be returned to its original state (i.e., as if AirPrint Bridge 
 
 ## ❓ Troubleshooting
 
-- **Printers Not Found**: Confirm the printers are installed, powered on, and marked “Shared” on your Mac.
-- **Dependencies Missing**: Ensure that `dns-sd`, `lpstat`, `lpoptions`, and `launchctl` are installed (they are typically standard on macOS).
-- **Permission Issues**: Use `sudo` for installation or uninstallation.
-- **Firewall Issues**: Make sure printer sharing and Bonjour services aren’t blocked in your macOS firewall.
+### General Checks
+- **Printers Not Found**: Confirm printers are installed, powered on, and marked “Shared” on your Mac.
+- **Dependencies Missing**: Ensure `dns-sd`, `lpstat`, `lpoptions`, and `launchctl` are available (standard on macOS).
+- **Permission Issues**: Use `sudo` for testing (`-t`), installation (`-i`), or uninstallation (`-u`).
+- **Firewall Issues**: Allow incoming mDNS (UDP 5353) and IPP (TCP 631) or disable the firewall while testing.
 - **No Output in Log**: If you enabled logging but see no file, ensure the script has permission to create/write the file.
 - **Phantom Printer Remains**: Toggle macOS **Printer Sharing** off and back on if a printer still appears after uninstalling.
+- **Network Access**: Ensure the iOS device and bridge host are on the same Wi‑Fi/subnet, with no guest SSID, VLAN, client-isolation, or VPN blocking multicast.
+- **Static IP/DHCP Reservation**: Ensure a stable DHCP reservation or static IP address for the AirPrint bridge host so clients can consistently reach it.
+
+### iOS Specific Checks
+- **Network Consistency**: Confirm the device is on the same Wi-Fi network and no VPN is active.
+- **mDNS/Bonjour Browser**: Use a Bonjour browser app (e.g., “Discovery – DNS‑SD Browser”) to confirm `_ipp._tcp` is visible and that the advertised host can be resolved to an IP:port.
+- **Clear Caches**: Toggle Wi‑Fi or reboot the iOS device to clear mDNS caches.
+- **Network Analyzer**: Use a Network Analyzer app to ping the bridge host and test connection to TCP port 631 (IPP).
+
+### Manual Verification & Fixes
+
+#### 1. Set AirPrint Bridge Hostname
+If the hostname is blank or inconsistent, it can cause discovery issues:
+```bash
+# Check current hostname
+scutil --get HostName
+
+# Set a consistent hostname (if needed)
+sudo scutil --set HostName <BRIDGE_HOSTNAME>
+sudo killall mDNSResponder
+```
+
+#### 2. Verify Advertised Services
+Run these commands from another Mac or the same host to verify the service is active and check TXT records:
+```bash
+# Browse for IPP services
+dns-sd -B _ipp._tcp
+
+# Look up specific service details (use the name found above)
+dns-sd -L "<Registered Service Name>" _ipp._tcp local
+```
+*Look for `pdl`, `rp`, `URF`, `TLS`, `Duplex`, etc., in the TXT output.*
+
+#### 3. Check IPP Reachability
+Ensure the IPP port is open and responding:
+```bash
+# Check port 631
+nc -vz <BRIDGE_HOST> 631
+
+# Test IPP response
+curl -I http://<BRIDGE_HOST>:631
+```
 
 ## 📄 License
 
